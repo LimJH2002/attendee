@@ -3,7 +3,18 @@ import os
 from .base import *
 
 DEBUG = True
-ALLOWED_HOSTS = ["tendee-stripe-hooks.ngrok.io", "localhost"]
+# Allow all hosts in development for tunneling services
+ALLOWED_HOSTS = [
+    "tendee-stripe-hooks.ngrok.io",
+    "localhost",
+    "127.0.0.1",
+    "salty-days-burn.loca.lt",
+]
+
+# CSRF settings for development tunneling
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.loca.lt",
+]
 
 DATABASES = {
     "default": {
