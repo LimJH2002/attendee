@@ -8,12 +8,12 @@ ALLOWED_HOSTS = [
     "tendee-stripe-hooks.ngrok.io",
     "localhost",
     "127.0.0.1",
-    "salty-days-burn.loca.lt",
+    "attendee-tc-1.teemmate.my",
 ]
 
 # CSRF settings for development tunneling
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.loca.lt",
+    "https://attendee-tc-1.teemmate.my",
 ]
 
 DATABASES = {
