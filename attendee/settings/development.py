@@ -30,6 +30,10 @@ DATABASES = {
     }
 }
 
+# Celery Configuration for Development
+# PRESERVE CELERY TASKS IF WORKER IS SHUT DOWN
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
 # Log more stuff in development
 LOGGING = {
     "version": 1,
