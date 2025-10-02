@@ -1,5 +1,5 @@
-services:
-  attendee-worker-local-1:
+services:  
+  attendee-worker-local:
     build: ./
     volumes:
       - .:/attendee
@@ -10,26 +10,7 @@ services:
       - REDIS_URL=redis://redis:6379/5
       - DJANGO_SETTINGS_MODULE=attendee.settings.development
       - ENABLE_CHROME_SANDBOX=true
-<<<<<<< Updated upstream
-    command: "celery -A attendee worker -l INFO  --concurrency=1 --hostname=worker1@%%h"
-    security_opt:
-      - seccomp=./bots/web_bot_adapter/chrome_seccomp.json
-
-  attendee-worker-local-2:
-    build: ./
-    volumes:
-      - .:/attendee
-    networks:
-      - attendee_network
-    environment:
-      - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/5
-      - DJANGO_SETTINGS_MODULE=attendee.settings.development
-      - ENABLE_CHROME_SANDBOX=true
-    command: "celery -A attendee worker -l INFO --concurrency=1 --hostname=worker2@%%h"
-=======
-    command: "celery -A attendee worker -l INFO --concurrency=1 --prefetch-multiplier=1 -Ofair"
->>>>>>> Stashed changes
+    command: "celery -A attendee worker -l INFO --concurrency=1 --prefetch-multiplier=1 -Ofair --hostname=worker@%h"
     security_opt:
       - seccomp=./bots/web_bot_adapter/chrome_seccomp.json
 
