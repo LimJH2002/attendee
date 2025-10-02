@@ -1,8 +1,8 @@
 services:
-  attendee-worker-local:
+  attendee-worker-local-1:
     build: ./
     volumes:
-     - .:/attendee
+      - .:/attendee
     networks:
       - attendee_network
     environment:
@@ -10,14 +10,29 @@ services:
       - REDIS_URL=redis://redis:6379/5
       - DJANGO_SETTINGS_MODULE=attendee.settings.development
       - ENABLE_CHROME_SANDBOX=true
-    command: "celery -A attendee worker -l INFO"
+    command: "celery -A attendee worker -l INFO  --concurrency=1 --hostname=worker1@%%h"
+    security_opt:
+      - seccomp=./bots/web_bot_adapter/chrome_seccomp.json
+
+  attendee-worker-local-2:
+    build: ./
+    volumes:
+      - .:/attendee
+    networks:
+      - attendee_network
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/5
+      - DJANGO_SETTINGS_MODULE=attendee.settings.development
+      - ENABLE_CHROME_SANDBOX=true
+    command: "celery -A attendee worker -l INFO --concurrency=1 --hostname=worker2@%%h"
     security_opt:
       - seccomp=./bots/web_bot_adapter/chrome_seccomp.json
 
   attendee-scheduler-local:
     build: ./
     volumes:
-     - .:/attendee
+      - .:/attendee
     networks:
       - attendee_network
     environment:
@@ -30,7 +45,7 @@ services:
   attendee-app-local:
     build: ./
     volumes:
-     - .:/attendee
+      - .:/attendee
     networks:
       - attendee_network
     ports:
@@ -45,7 +60,7 @@ services:
   attendee-webpage-streamer-local:
     build: ./
     volumes:
-     - .:/attendee
+      - .:/attendee
     networks:
       - attendee_network
     ports:
@@ -59,7 +74,6 @@ services:
     profiles:
       - webpage-streamer
 
-
   postgres:
     image: postgres:15.3-alpine
     environment:
@@ -68,11 +82,10 @@ services:
       POSTGRES_PASSWORD: attendee_development_user
       PGDATA: /data/postgres
     volumes:
-       - postgres:/data/postgres
+      - postgres:/data/postgres
     networks:
       - attendee_network
     restart: unless-stopped
-
 
   redis:
     image: redis:7-alpine
