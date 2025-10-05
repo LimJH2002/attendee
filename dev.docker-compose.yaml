@@ -10,6 +10,7 @@ services:
       - REDIS_URL=redis://redis:6379/5
       - DJANGO_SETTINGS_MODULE=attendee.settings.development
       - ENABLE_CHROME_SANDBOX=true
+<<<<<<< Updated upstream
     command: "celery -A attendee worker -l INFO  --concurrency=1 --hostname=worker1@%%h"
     security_opt:
       - seccomp=./bots/web_bot_adapter/chrome_seccomp.json
@@ -26,6 +27,9 @@ services:
       - DJANGO_SETTINGS_MODULE=attendee.settings.development
       - ENABLE_CHROME_SANDBOX=true
     command: "celery -A attendee worker -l INFO --concurrency=1 --hostname=worker2@%%h"
+=======
+    command: "celery -A attendee worker -l INFO --concurrency=1 --prefetch-multiplier=1 -Ofair"
+>>>>>>> Stashed changes
     security_opt:
       - seccomp=./bots/web_bot_adapter/chrome_seccomp.json
 
