@@ -3,6 +3,7 @@ import os
 from .base import *
 
 DEBUG = True
+SITE_DOMAIN = "localhost:8000"
 # Allow all hosts in development for tunneling services
 ALLOWED_HOSTS = [
     "tendee-stripe-hooks.ngrok.io",
