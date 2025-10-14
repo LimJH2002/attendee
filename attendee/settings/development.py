@@ -11,12 +11,14 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "attendee-tc-1.teemmate.my",
     "attendee-hetz-1.teemmate.my",
+    "attendee-1.teemmate.my",
 ]
 
 # CSRF settings for development tunneling
 CSRF_TRUSTED_ORIGINS = [
     "https://attendee-tc-1.teemmate.my",
     "https://attendee-hetz-1.teemmate.my",
+    "https://attendee-1.teemmate.my",
 ]
 
 DATABASES = {
