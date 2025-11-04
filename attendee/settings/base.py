@@ -57,7 +57,7 @@ AUTHENTICATION_BACKENDS = [
 
 # Django allauth config
 SITE_ID = 1
-if os.getenv("DISABLE_SIGNUP"):
+if os.getenv("DISABLE_SIGNUP") and os.getenv("DISABLE_SIGNUP") != "false":
     ACCOUNT_ADAPTER = "accounts.adapters.NoNewUsersAccountAdapter"
 else:
     ACCOUNT_ADAPTER = "accounts.adapters.StandardAccountAdapter"
@@ -196,6 +196,12 @@ SPECTACULAR_SETTINGS = {
 }
 
 # publish with python manage.py spectacular --color --file docs/openapi.yml
+
+# Logging formatters - shared across environments
+LOG_FORMATTERS = {
+    "plain": {"format": "{levelname} {message}", "style": "{"},
+    "json": {"class": "attendee.logging.ISOJsonFormatter", "format": "%(timestamp)s %(name)s %(levelname)s %(message)s"},
+}
 
 # Set up django storage backend
 # Use s3 by default, but if the STORAGE_PROTOCOL env var is set to "azure", use azure storage
