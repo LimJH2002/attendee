@@ -614,6 +614,9 @@ class TranscriptionSettings:
     def deepgram_replace_settings(self):
         return self._settings.get("deepgram", {}).get("replace", [])
 
+    def kyutai_server_url(self):
+        return self._settings.get("kyutai", {}).get("server_url", None)
+
     def google_meet_closed_captions_language(self):
         return self._settings.get("meeting_closed_captions", {}).get("google_meet_language", None)
 
@@ -799,10 +802,20 @@ class Bot(models.Model):
 
     def voice_agent_url(self):
         voice_agent_settings = self.settings.get("voice_agent_settings", {}) or {}
-        return voice_agent_settings.get("url", None)
+        return voice_agent_settings.get("url", None) or voice_agent_settings.get("screenshare_url", None)
+
+    def voice_agent_video_output_destination(self):
+        voice_agent_settings = self.settings.get("voice_agent_settings", {}) or {}
+        if voice_agent_settings.get("url", None):
+            return "webcam"
+        elif voice_agent_settings.get("screenshare_url", None):
+            return "screenshare"
+        else:
+            return None
 
     def should_launch_webpage_streamer(self):
-        return bool(self.voice_agent_url())
+        voice_agent_settings = self.settings.get("voice_agent_settings", {}) or {}
+        return voice_agent_settings.get("reserve_resources", False)
 
     def zoom_tokens_callback_url(self):
         callback_settings = self.settings.get("callback_settings", {})
@@ -821,6 +834,12 @@ class Bot(models.Model):
         if recording_settings is None:
             recording_settings = {}
         return recording_settings.get("record_chat_messages_when_paused", False)
+
+    def reserve_additional_storage(self):
+        recording_settings = self.settings.get("recording_settings", {})
+        if recording_settings is None:
+            recording_settings = {}
+        return recording_settings.get("reserve_additional_storage", False)
 
     def record_async_transcription_audio_chunks(self):
         if not self.project.organization.is_async_transcription_enabled:
@@ -1381,6 +1400,10 @@ class BotEventManager:
         return state == BotStates.JOINED_RECORDING or state == BotStates.JOINED_NOT_RECORDING or state == BotStates.JOINED_RECORDING_PERMISSION_DENIED or state == BotStates.JOINED_RECORDING_PAUSED
 
     @classmethod
+    def is_state_that_can_update_voice_agent_settings(cls, state: int):
+        return state == BotStates.JOINED_RECORDING or state == BotStates.JOINED_NOT_RECORDING or state == BotStates.JOINED_RECORDING_PERMISSION_DENIED or state == BotStates.JOINED_RECORDING_PAUSED
+
+    @classmethod
     def is_state_that_can_pause_recording(cls, state: int):
         valid_from_states = cls.VALID_TRANSITIONS[BotEventTypes.RECORDING_PAUSED]["from"]
         if not isinstance(valid_from_states, (list, tuple)):
@@ -1654,6 +1677,7 @@ class Participant(models.Model):
 class ParticipantEventTypes(models.IntegerChoices):
     JOIN = 1, "Join"
     LEAVE = 2, "Leave"
+    UPDATE = 5, "Update"  # Leave space for possible speech start / stop events
 
     @classmethod
     def type_to_api_code(cls, value):
@@ -1661,6 +1685,7 @@ class ParticipantEventTypes(models.IntegerChoices):
         mapping = {
             cls.JOIN: "join",
             cls.LEAVE: "leave",
+            cls.UPDATE: "update",
         }
         return mapping.get(value)
 
@@ -1756,6 +1781,7 @@ class TranscriptionProviders(models.IntegerChoices):
     ASSEMBLY_AI = 5, "Assembly AI"
     SARVAM = 6, "Sarvam"
     ELEVENLABS = 7, "ElevenLabs"
+    KYUTAI = 8, "Kyutai"
 
 
 class RecordingStorage(Storage):
@@ -2196,6 +2222,7 @@ class Credentials(models.Model):
         TEAMS_BOT_LOGIN = 8, "Teams Bot Login"
         EXTERNAL_MEDIA_STORAGE = 9, "External Media Storage"
         ELEVENLABS = 10, "ElevenLabs"
+        KYUTAI = 11, "Kyutai"
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="credentials")
     credential_type = models.IntegerField(choices=CredentialTypes.choices, null=False)
