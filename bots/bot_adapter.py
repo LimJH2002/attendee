@@ -24,7 +24,11 @@ class BotAdapter:
         JOINING_BREAKOUT_ROOM = "Joining breakout room"
         LEAVING_BREAKOUT_ROOM = "Leaving breakout room"
         BOT_RECORDING_PERMISSION_DENIED = "Bot recording permission denied"
-        READY_TO_SHOW_WEBPAGE_STREAM = "Ready to show webpage stream"
+
+        # App session messages
+        APP_SESSION_CONNECTED = "App session connected"
+        APP_SESSION_DISCONNECT_REQUESTED = "App session disconnect requested"
+        APP_SESSION_DISCONNECTED = "App session disconnected"
 
     class BOT_RECORDING_PERMISSION_DENIED_REASON:
         HOST_DENIED_PERMISSION = "HOST_DENIED_PERMISSION"
@@ -35,5 +39,6 @@ class BotAdapter:
         AUTO_LEAVE_SILENCE = "AUTO_LEAVE_SILENCE"
         AUTO_LEAVE_ONLY_PARTICIPANT_IN_MEETING = "AUTO_LEAVE_ONLY_PARTICIPANT_IN_MEETING"
         AUTO_LEAVE_MAX_UPTIME = "AUTO_LEAVE_MAX_UPTIME"
+        AUTO_LEAVE_COULD_NOT_ENABLE_CLOSED_CAPTIONS = "AUTO_LEAVE_COULD_NOT_ENABLE_CLOSED_CAPTIONS"
 
     DEBUG_RECORDING_FILE_PATH = "/tmp/debug_screen_recording.mp4"

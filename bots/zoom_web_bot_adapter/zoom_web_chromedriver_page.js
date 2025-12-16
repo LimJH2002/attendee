@@ -13,10 +13,12 @@ var userEmail = '';
 var registrantToken = '';
 var recordingToken = zoomInitialData.joinToken || zoomInitialData.appPrivilegeToken;
 var zakToken = zoomInitialData.zakToken;
+var onBehalfToken = zoomInitialData.onBehalfToken;
 var leaveUrl = 'https://zoom.us';
 var userEnteredMeeting = false;
 var recordingPermissionGranted = false;
 var madeInitialRequestForRecordingPermission = false;
+var sentSaveCaptionNotAllowed = false;
 
 class TranscriptMessageFinalizationManager {
     constructor() {
@@ -110,6 +112,7 @@ function startMeeting(signature) {
             userEmail: userEmail,
             tk: registrantToken,
             recordingToken: recordingToken,
+            obfToken: onBehalfToken,
             zak: zakToken,
             success: (success) => {
                 console.log('join success');
@@ -200,7 +203,16 @@ function startMeeting(signature) {
     ZoomMtg.inMeetingServiceListener('onReceiveTranscriptionMsg', function (item) {
         console.log('onReceiveTranscriptionMsg', item);
 
-        if (!item.msgId) {
+        if (item === 'Save caption is not allowed!' && !sentSaveCaptionNotAllowed) {
+            window.ws.sendJson({
+                type: 'ClosedCaptionStatusChange',
+                change: 'save_caption_not_allowed'
+            });
+            sentSaveCaptionNotAllowed = true;
+            return;
+        }
+        
+        if (!item.msgId) {            
             window.ws.sendJson({
                 type: 'TranscriptMessageError',
                 error: 'No msgId',

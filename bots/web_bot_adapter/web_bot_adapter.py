@@ -14,6 +14,7 @@ import requests
 from django.conf import settings
 from pyvirtualdisplay import Display
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from websockets.sync.server import serve
 
 from bots.automatic_leave_configuration import AutomaticLeaveConfiguration
@@ -352,8 +353,8 @@ class WebBotAdapter(BotAdapter):
 
                         elif json_data.get("type") == "ChatStatusChange":
                             if json_data.get("change") == "ready_to_send":
-                                self.send_message_callback({"message": self.Messages.READY_TO_SEND_CHAT_MESSAGE})
                                 self.ready_to_send_chat_messages = True
+                                self.send_message_callback({"message": self.Messages.READY_TO_SEND_CHAT_MESSAGE})
 
                         elif json_data.get("type") == "MeetingStatusChange":
                             if json_data.get("change") == "removed_from_meeting":
@@ -368,6 +369,10 @@ class WebBotAdapter(BotAdapter):
                                 self.after_bot_can_record_meeting()
                             elif json_data.get("change") == "denied":
                                 self.after_bot_recording_permission_denied()
+
+                        elif json_data.get("type") == "ClosedCaptionStatusChange":
+                            if json_data.get("change") == "save_caption_not_allowed":
+                                self.could_not_enable_closed_captions()
 
                 elif message_type == 2:  # VIDEO
                     self.process_video_frame(message)
@@ -539,7 +544,7 @@ class WebBotAdapter(BotAdapter):
                 logger.info(f"Error closing existing driver: {e}")
             self.driver = None
 
-        self.driver = webdriver.Chrome(options=options)
+        self.driver = webdriver.Chrome(options=options, service=Service(executable_path="/usr/local/bin/chromedriver"))
         logger.info(f"web driver server initialized at port {self.driver.service.port}")
 
         initial_data_code = f"window.initialData = {{websocketPort: {self.websocket_port}, videoFrameWidth: {self.video_frame_size[0]}, videoFrameHeight: {self.video_frame_size[1]}, botName: {json.dumps(self.display_name)}, addClickRipple: {'true' if self.should_create_debug_recording else 'false'}, recordingView: '{self.recording_view}', sendMixedAudio: {'true' if self.add_mixed_audio_chunk_callback else 'false'}, sendPerParticipantAudio: {'true' if self.add_audio_chunk_callback else 'false'}, collectCaptions: {'true' if self.upsert_caption_callback else 'false'}}}"
@@ -722,8 +727,6 @@ class WebBotAdapter(BotAdapter):
 
         self.media_sending_enable_timestamp_ms = time.time() * 1000
 
-        self.ready_to_show_webpage_stream()
-
     def leave(self):
         if self.left_meeting:
             return
@@ -824,6 +827,9 @@ class WebBotAdapter(BotAdapter):
                 self.send_message_callback({"message": self.Messages.ADAPTER_REQUESTED_BOT_LEAVE_MEETING, "leave_reason": BotAdapter.LEAVE_REASON.AUTO_LEAVE_MAX_UPTIME})
                 return
 
+    def is_ready_to_send_chat_messages(self):
+        return self.ready_to_send_chat_messages
+
     def webpage_streamer_get_peer_connection_offer(self):
         return self.driver.execute_script("return window.botOutputManager.getBotOutputPeerConnectionOffer();")
 
@@ -836,11 +842,18 @@ class WebBotAdapter(BotAdapter):
     def webpage_streamer_stop_bot_output_media_stream(self):
         self.driver.execute_script("window.botOutputManager.stopBotOutputMediaStream();")
 
+    def is_bot_ready_for_webpage_streamer(self):
+        if not self.driver:
+            return False
+        return self.driver.execute_script("return window.botOutputManager?.isReadyForWebpageStreamer();")
+
     def ready_to_show_bot_image(self):
         self.send_message_callback({"message": self.Messages.READY_TO_SHOW_BOT_IMAGE})
 
-    def ready_to_show_webpage_stream(self):
-        self.send_message_callback({"message": self.Messages.READY_TO_SHOW_WEBPAGE_STREAM})
+    def could_not_enable_closed_captions(self):
+        if self.automatic_leave_configuration.enable_closed_captions_timeout_seconds is not None:
+            logger.info("Bot is configured to leave meeting if it could not enable closed captions, so leaving meeting")
+            self.send_message_callback({"message": self.Messages.ADAPTER_REQUESTED_BOT_LEAVE_MEETING, "leave_reason": BotAdapter.LEAVE_REASON.AUTO_LEAVE_COULD_NOT_ENABLE_CLOSED_CAPTIONS})
 
     def get_first_buffer_timestamp_ms(self):
         if self.media_sending_enable_timestamp_ms is None:
